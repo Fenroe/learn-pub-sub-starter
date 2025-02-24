@@ -18,23 +18,42 @@ func main() {
 		log.Fatal("", err)
 	}
 	defer connection.Close()
+
 	fmt.Println("Starting Peril client...")
+
 	username, err := gamelogic.ClientWelcome()
 	if err != nil {
 		log.Printf("Could not get username: %v\n", err)
 	}
+
+	pauseUsernameQueueName := fmt.Sprintf("%s.%s", routing.PauseKey, username)
+
 	_, _, err = pubsub.DeclareAndBind(
 		connection,
 		routing.ExchangePerilDirect,
-		fmt.Sprintf("%s.%s", routing.PauseKey, username),
+		pauseUsernameQueueName,
 		routing.PauseKey,
-		1,
+		pubsub.Transient,
 	)
 	if err != nil {
 		log.Printf("Could not bind queue to message exchange: %v\n", err)
 	}
 
 	gameState := gamelogic.NewGameState(username)
+
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilDirect,
+		pauseUsernameQueueName,
+		routing.PauseKey,
+		pubsub.Transient,
+		handlerPause(gameState),
+	)
+
+	if err != nil {
+		log.Println("Could not establish connection to server: ", err)
+	}
+
 	programIsRunning := true
 	for programIsRunning {
 		input := gamelogic.GetInput()

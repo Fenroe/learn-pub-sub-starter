@@ -28,7 +28,13 @@ func main() {
 	log.Println("Connection to message broker was successful")
 	log.Println("Starting Peril server...")
 
-	_, _, err = pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, "game_logs.*", 0)
+	_, _, err = pubsub.DeclareAndBind(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		"game_logs.*",
+		pubsub.Durable,
+	)
 	if err != nil {
 		log.Fatal("", err)
 	}
@@ -42,12 +48,12 @@ func main() {
 		}
 		if input[0] == "pause" {
 			log.Println("Sending pause message")
-			pubsub.PublishJSON[routing.PlayingState](connectionChannel, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{
+			pubsub.PublishJSON(connectionChannel, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{
 				IsPaused: true,
 			})
 		} else if input[0] == "resume" {
 			log.Println("Sending resume message")
-			pubsub.PublishJSON[routing.PlayingState](connectionChannel, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{
+			pubsub.PublishJSON(connectionChannel, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{
 				IsPaused: false,
 			})
 		} else {
