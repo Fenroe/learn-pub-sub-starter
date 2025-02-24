@@ -28,6 +28,11 @@ func main() {
 	log.Println("Connection to message broker was successful")
 	log.Println("Starting Peril server...")
 
+	_, _, err = pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, "game_logs.*", 0)
+	if err != nil {
+		log.Fatal("", err)
+	}
+
 	gamelogic.PrintServerHelp()
 
 	for {
