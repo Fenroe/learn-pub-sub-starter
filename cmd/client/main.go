@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -36,8 +34,38 @@ func main() {
 		log.Printf("Could not bind queue to message exchange: %v\n", err)
 	}
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	<-signalChan
-	log.Println("Shutting down client")
+	gameState := gamelogic.NewGameState(username)
+	programIsRunning := true
+	for programIsRunning {
+		input := gamelogic.GetInput()
+		if len(input) == 0 {
+			continue
+		}
+		switch input[0] {
+		case "spawn":
+			fmt.Println(input[1:][1])
+			err = gameState.CommandSpawn(input)
+			if err != nil {
+				fmt.Printf("Could not spawn unit: %v\n", err)
+				continue
+			}
+		case "move":
+			_, err := gameState.CommandMove(input)
+			if err != nil {
+				fmt.Printf("Could not move unit: %v\n", err)
+				continue
+			}
+			fmt.Println("Moved piece")
+		case "status":
+			gameState.CommandStatus()
+		case "help":
+			gamelogic.PrintClientHelp()
+		case "quit":
+			gamelogic.PrintQuit()
+			programIsRunning = false
+		default:
+			fmt.Println("Could not execute command")
+			fmt.Println("Enter 'help' for a list of available commands")
+		}
+	}
 }
