@@ -19,6 +19,11 @@ func main() {
 	}
 	defer connection.Close()
 
+	connectionChannel, err := connection.Channel()
+	if err != nil {
+		log.Fatal("", err)
+	}
+
 	fmt.Println("Starting Peril client...")
 
 	username, err := gamelogic.ClientWelcome()
@@ -54,6 +59,19 @@ func main() {
 		log.Println("Could not establish connection to server: ", err)
 	}
 
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilTopic,
+		"army_moves."+username,
+		"army_moves.*",
+		pubsub.Transient,
+		handlerMove(gameState),
+	)
+
+	if err != nil {
+		log.Println("Could not establish connection to server: ", err)
+	}
+
 	programIsRunning := true
 	for programIsRunning {
 		input := gamelogic.GetInput()
@@ -62,19 +80,19 @@ func main() {
 		}
 		switch input[0] {
 		case "spawn":
-			fmt.Println(input[1:][1])
 			err = gameState.CommandSpawn(input)
 			if err != nil {
 				fmt.Printf("Could not spawn unit: %v\n", err)
 				continue
 			}
 		case "move":
-			_, err := gameState.CommandMove(input)
+			move, err := gameState.CommandMove(input)
 			if err != nil {
 				fmt.Printf("Could not move unit: %v\n", err)
 				continue
 			}
-			fmt.Println("Moved piece")
+			pubsub.PublishJSON(connectionChannel, routing.ExchangePerilTopic, "army_moves."+username, move)
+			fmt.Println("move published to exchange")
 		case "status":
 			gameState.CommandStatus()
 		case "help":
