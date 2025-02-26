@@ -15,13 +15,17 @@ func DeclareAndBind(
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
+
+	table := make(amqp.Table, 1)
+	table["x-dead-letter-exchange"] = "peril_dlx"
+
 	queue, err := channel.QueueDeclare(
 		queueName,                    // name
 		simpleQueueType == Durable,   // durable
 		simpleQueueType == Transient, // autoDelete
 		simpleQueueType == Transient, // exclusive
 		false,                        // noWait
-		nil,                          // args
+		table,                        // args
 	)
 	if err != nil {
 		return nil, amqp.Queue{}, err
