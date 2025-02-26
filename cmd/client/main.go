@@ -78,7 +78,7 @@ func main() {
 		"war",
 		"war.*",
 		pubsub.Durable,
-		handlerWar(gameState),
+		handlerWar(gameState, connectionChannel),
 	)
 
 	if err != nil {

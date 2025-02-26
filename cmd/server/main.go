@@ -32,11 +32,11 @@ func main() {
 		connection,
 		routing.ExchangePerilTopic,
 		routing.GameLogSlug,
-		"game_logs.*",
+		routing.GameLogSlug+".*",
 		pubsub.Durable,
 	)
 	if err != nil {
-		log.Fatal("", err)
+		log.Fatal("test", err)
 	}
 
 	gamelogic.PrintServerHelp()
