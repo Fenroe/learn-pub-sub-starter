@@ -13,7 +13,7 @@ func SubscribeJSON[T any](
 	queueName,
 	key string,
 	simpleQueueType SimpleQueueType,
-	handler func(T),
+	handler func(T) AckType,
 ) error {
 	channel, queue, err := DeclareAndBind(conn, exchange, queueName, key, simpleQueueType)
 	if err != nil {
@@ -30,10 +30,17 @@ func SubscribeJSON[T any](
 			if err != nil {
 				log.Println(err)
 			}
-			handler(val)
-			err = delivery.Ack(false)
-			if err != nil {
-				log.Println(err)
+			ackType := handler(val)
+			switch ackType {
+			case Ack:
+				delivery.Ack(false)
+				log.Println("Message was acknowledged")
+			case NackRequeue:
+				delivery.Nack(false, true)
+				log.Println("Message was requeued")
+			case NackDiscard:
+				delivery.Nack(false, false)
+				log.Println("Message was discarded")
 			}
 		}
 	}()
