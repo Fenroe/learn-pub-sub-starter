@@ -65,7 +65,20 @@ func main() {
 		"army_moves."+username,
 		"army_moves.*",
 		pubsub.Transient,
-		handlerMove(gameState),
+		handlerMove(gameState, connectionChannel),
+	)
+
+	if err != nil {
+		log.Println("Could not establish connection to server: ", err)
+	}
+
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilTopic,
+		"war",
+		"war.*",
+		pubsub.Durable,
+		handlerWar(gameState),
 	)
 
 	if err != nil {
