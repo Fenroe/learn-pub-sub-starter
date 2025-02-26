@@ -1,9 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"os"
-	"os/signal"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -39,6 +38,23 @@ func main() {
 		log.Fatal("test", err)
 	}
 
+	err = pubsub.SubscribeGob(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.Durable,
+		func(gl routing.GameLog) pubsub.AckType {
+			defer fmt.Print("> ")
+			gamelogic.WriteLog(gl)
+			return pubsub.Ack
+		},
+	)
+
+	if err != nil {
+		log.Fatal("test", err)
+	}
+
 	gamelogic.PrintServerHelp()
 
 	for {
@@ -61,9 +77,4 @@ func main() {
 			break
 		}
 	}
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	<-signalChan
-	log.Println("Shutting down server")
 }
